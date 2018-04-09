@@ -6,6 +6,6 @@ Communication:Init(Modem)
 
 
 while true do
-    local x = Communication:Listen()
+    local x = Communication:ListenServer()
     print(textutils.serialize(x))
 end

@@ -31,9 +31,22 @@ function Communication:Listen()
     return false
 end
 
+function Communication:ListenServer()
+    local Received = self.Modem:Receive(self.Config.CLIENT_TO_SERVER)
+    if type(Received) == "table" then
+        if Received.Recipient == ID then
+            if Received.Action then
+                return Received
+            end
+            return Received
+        end
+    end
+    return false
+end
+
 function Communication:GetQueue()
-    self.Modem:Transmit(self.Config.CLIENT_TO_SERVER, self.Requests.GET_QUEUE, "SERVER_QUEUE")
-    local QueueResponse = self.Modem:Receive(self.Config.SERVER_TO_CLIENT, 1.5) -- timeout: 1.5 seconds
+    self.Modem:Transmit(self.Config.CLIENT_TO_SERVER, self.Config.SERVER_TO_CLIENT, self.Requests.GET_QUEUE, "SERVER_QUEUE")
+    local QueueResponse = self.Modem:Receive(self.Config.SERVER_TO_CLIENT, 3) -- timeout: 1.5 seconds
 
     if type(QueueResponse) == "table" then
         if QueueResponse.Recipient == ID then

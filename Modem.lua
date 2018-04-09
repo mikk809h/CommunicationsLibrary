@@ -47,7 +47,7 @@ function Modem:Close(Channel)
     end
 end
 
-function Modem:Transmit(Channel, Message, Recipient)
+function Modem:Transmit(Channel, ReplyChannel, Message, Recipient)
     self:Open(Channel)
 
     local tMessage = {
@@ -56,7 +56,7 @@ function Modem:Transmit(Channel, Message, Recipient)
         Sender = ID
     }
 
-    self.MODEM.transmit(Channel, Channel, tMessage)
+    self.MODEM.transmit(Channel, ReplyChannel, tMessage)
 end
 
 --[[
@@ -74,6 +74,9 @@ function Modem:Receive(Channel, Timeout)
             return false, "Timeout"
         elseif event == "modem_message" then
             if type(message) == "table" then
+                if message.Recipient == "*" then
+                    message.Recipient = ID
+                end
                 if message.Recipient == ID then
                     if Channel and frequency == Channel then
                         return {Channel = frequency, ReplyChannel = replyFrequency, Distance = distance, Message = message.Message, Sender = message.Sender, Recipient = message.Recipient}
