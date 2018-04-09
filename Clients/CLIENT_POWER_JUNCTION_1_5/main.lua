@@ -4,8 +4,6 @@ Modem:Init()
 local Communication = loadfile("/Communication.lua")()
 Communication:Init(Modem)
 
-local Queue = {}
-local Errors = {}
 function Listener()
     while true do
         local response = Communication:Listen()
@@ -14,14 +12,17 @@ function Listener()
             if type(response) == "table" then
                 print("Received message from " .. response.Sender)
                 print("Action " .. response.Message)
-                table.insert(Queue, 1, { Completed = false, Action = response.Message })
-                --print(textutils.serialize(response))
+                local ok, err = pcall(function() return loadstring(response.Message)() end)
+                if not ok then
+                    Modem:Transmit(Communication.Config.CLIENT_TO_SERVER, Communication.Config.SERVER_TO_CLIENT, "ERROR: " .. tostring(err), "TEST_CONTROLLER")
+                else
+                    Modem:Transmit(Communication.Config.CLIENT_TO_SERVER, Communication.Config.SERVER_TO_CLIENT, "DONE", "TEST_CONTROLLER")
+                end
+                print("Command completed!")
             end
         else
             print("Unknown action: " .. tostring(response))
         end
-        os.queueEvent("1")
-        os.pullEvent("1")
     end
 end
 
@@ -37,27 +38,5 @@ function Ping()
     end
 end
 
-function HandleQueue()
-    while true do
-        if #Queue > 0 then
-            -- Handle queue from beginning
-            local ok, err = pcall(function() return loadstring(Queue[1].Action)() end)
-            if not ok then
-                Queue[1].Completed = true
-                table.insert(Errors, 1, Queue[1])
-                print("Action error: " .. tostring(ok) .. " | " .. tostring(err))
-            else
-                print("Action completed: " .. tostring(ok) .. " | " .. tostring(err))
-                Queue[1].Completed = true
-            end
-            if Queue[1].Completed == true then
-                table.remove(Queue, 1)
-            end
-        end
-        os.queueEvent("2")
-        os.pullEvent("2")
-    end
-end
-
-parallel.waitForAny(Listener, Ping, HandleQueue)
+parallel.waitForAny(Listener, Ping)
 --Modem:Transmit(25, "Hello World", "SERVER_DIAGNOSTICS")
